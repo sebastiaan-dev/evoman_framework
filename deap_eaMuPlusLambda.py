@@ -8,11 +8,11 @@ import sys, os
 import random
 import time
 from evoman.environment import Environment
-from deap import creator, base, tools
+from deap import creator, base, tools, algorithms
 import numpy as np
 from demo_controller import player_controller
 
-experiment_name = 'dummy_demo'
+experiment_name = 'dummy_demo_muPlusLambda'
 n_hidden_neurons = 10
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
@@ -52,8 +52,11 @@ def evalOneMax(individual):
 
 #initialize DEAP
 def init_deap():
-    creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-    creator.create("Individual", list, fitness=creator.FitnessMax)
+    try:
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMax)
+    except AttributeError:
+        pass
     toolbox = base.Toolbox()
     toolbox.register("attr_float", random.uniform, -1, 1)
     toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=n_weights)
@@ -66,8 +69,8 @@ def init_deap():
 
 toolbox = init_deap()
 #initiliazes population using deap population function which calls registered individual function repedately.
-def init_pop(npop):
-    return toolbox.population(n=npop)
+def init_pop(mu):
+    return toolbox.population(n=mu)
 
 #evaluate population using registered evaluate function (evalOneMax)
 def eval_pop(population):
@@ -75,9 +78,9 @@ def eval_pop(population):
     for ind, fit in zip(population, fitnesses):
         ind.fitness.values = fit
 
-#select best indivuduals among tournsize (defined during initialization deap) randomly selected individuals for len(population) times 
-def selection(population):
-    return toolbox.select(population, len(population))
+#select best indivuduals among combined population and offspring
+def selection(population, offspring, mu):
+    return toolbox.select(population + offspring, mu)
 
 #crossover using two-point crossover with probability cxpb
 def crossover(offspring, cxpb):
@@ -94,10 +97,10 @@ def mutate(offspring, mutpb):
             toolbox.mutate(mutant)
             del mutant.fitness.values
 
-#replace old population with new offspring
-def replace_pop(population, offspring):
-    population[:] = offspring
-    
+#replacement to form new population
+def replace_pop(parents, offspring, mu):
+    return selection(parents, offspring, mu)
+
 '''
 Each step of evalutionary algorithm is implemented as seperate functions. Order of steps:
 1- init_pop
@@ -107,33 +110,49 @@ Each step of evalutionary algorithm is implemented as seperate functions. Order 
 5- mutation
 6- replacement
 '''
-def run_evolution(npop=100, ngen=30, cxpb=0.6, mutpb=0.2):
-    population = init_pop(npop)
+
+def run_evolution(mu=100, ngen=30, lambda_=100, cxpb=0.6, mutpb=0.2):
+    population = init_pop(mu)
+
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("min", np.min)
     stats.register("max", np.max)
+
+    halloffame = tools.HallOfFame(1)
+    
     #init log
     log_file = open(experiment_name + '/results.txt', 'a')
     log_file.write("\ngen best mean std\n")
     start = time.time()
+    
+    # Step 2: Evaluate the initial population
     eval_pop(population)
-    #evolve
-    for gen in range(ngen):
-        #select using tournament selection
-        offspring = selection(population)
-        offspring = list(map(toolbox.clone, offspring))
-        #apply crossover (w/ prob cxbp) & mutation (w/ prob mutpb) to the offspring
-        crossover(offspring, cxpb)
-        mutate(offspring, mutpb)
-        #evaluate population and replace old population
+    halloffame.update(population)
+    log(0, population, stats, log_file)
+    
+    # Evolve
+    for gen in range(1, ngen + 1):
+        # Generate offspring (crossover and mutation handled by varOr())
+        offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
+
+        # crossover(offspring, cxpb)
+        # mutate(offspring, mutpb)
+
+        # Evaluate offspring
         eval_pop(offspring)
-        replace_pop(population, offspring)
+
+        # Replacement: (select the next generation from parents + offspring)
+        population = replace_pop(population, offspring, mu)
+        halloffame.update(population)
+
         log(gen, population, stats, log_file)
+    
     end = time.time()  # End timer
     print(f"\nExecution time: {round((end - start) / 60, 2)} minutes \n")
     log_file.close()
     env.state_to_log()
+
 
 if __name__ == "__main__":
     run_evolution()
