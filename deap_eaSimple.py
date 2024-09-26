@@ -2,53 +2,38 @@
 import sys, os
 import random
 import time
-from evoman.environment import Environment
 from deap import creator, base, tools, algorithms
 import numpy as np
-from demo_controller import player_controller
 
-experiment_name = 'dummy_demo_eaSimple'
-n_hidden_neurons = 10
-if not os.path.exists(experiment_name):
-    os.makedirs(experiment_name)
 
 #log for visualization
-def log(gen, ngen, population, stats, log_file):
+def log(gen, ngen, population, stats, log_file, experiment_name):
     record = stats.compile(population)
     best_ind = tools.selBest(population, 1)[0]
     best_fitness = best_ind.fitness.values[0]
 
     gen_mean = record['avg']
     gen_std = np.std([ind.fitness.values[0] for ind in population])
-    # print(f"\n GENERATION {gen}  {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}")
+    # print(f"\n GENERATION {gen} - Best Fitness: {best_fitness:.6f}, Mean Fitness: {gen_mean:.6f}, Std Dev: {gen_std:.6f}")
     log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
     
     if gen == 0 or gen == ngen:
+        print(f"\n GENERATION {gen} - Best Ind: {best_ind[:5]}... - Experiment: {experiment_name}")
         np.savetxt(os.path.join(experiment_name, 'best.txt'), best_ind)
 
-#initialize environment
-env = Environment(experiment_name=experiment_name,
-                  enemies=[7, 8],
-                  multiplemode="yes",
-                  playermode="ai",
-                  player_controller=player_controller(n_hidden_neurons),
-                  enemymode="static",
-                  level=2,
-                  speed="fastest",
-                  visuals=False)
-
-#NN parameters
-n_hidden = 10
-n_weights = (env.get_num_sensors() + 1) * n_hidden + (n_hidden + 1) * 5
 
 #fitness evaluation function
-def evalOneMax(individual):
+def evalOneMax(individual, env):
     individual_np = np.array(individual)
     f, p, e, t = env.play(pcont=individual_np)
     return f,
 
 #initialize DEAP
-def init_deap():
+def init_deap(env):
+    # NN paramtetrs
+    n_hidden = 10
+    n_weights = (env.get_num_sensors() + 1) * n_hidden + (n_hidden + 1) * 5
+
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", list, fitness=creator.FitnessMax)
     toolbox = base.Toolbox()
@@ -61,50 +46,35 @@ def init_deap():
     toolbox.register("select", tools.selTournament, tournsize=3)
     return toolbox
 
-toolbox = init_deap()
 
 # Step 1: Initialize population
-def init_pop(npop):
+def init_pop(toolbox, npop):
     return toolbox.population(n=npop)
 
 # Step 2: Evaluate population using evaluation function (evalOneMax)
-def eval_pop(individuals):
+def eval_pop(individuals, env):
     """Evaluate the fitness of a list of individuals."""
-    fitnesses = list(map(toolbox.evaluate, individuals))
+    # print(f"Evaluating population of {len(individuals)} individuals.")
+    fitnesses = list(map(lambda ind: evalOneMax(ind, env), individuals))
     for ind, fit in zip(individuals, fitnesses):
         ind.fitness.values = fit
+        # print(f"Individual Fitness: {fit[0]:.6f}")
 
 # Step 3: Select the next generation individuals
-def selection(population):
+def selection(toolbox, population):
     return toolbox.select(population, len(population))
-
-# Step 4: Apply crossover to the selected offspring (I used DEAP's varAnd but can instead us these functions too)
-def crossover(offspring, cxpb):
-    for child1, child2 in zip(offspring[::2], offspring[1::2]):
-        if random.random() < cxpb:
-            toolbox.mate(child1, child2)
-            del child1.fitness.values
-            del child2.fitness.values
-
-# Step 5: Mutation to offspring
-def mutate(offspring, mutpb):
-    for mutant in offspring:
-        if random.random() < mutpb:
-            toolbox.mutate(mutant)
-            del mutant.fitness.values
 
 # Step 6: Replace the old population with new offspring
 def replacement(population, offspring):
+    # print(f"Replacing population with new offspring....")
     population[:] = offspring
 
-
-
-def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None, halloffame=None, verbose=True, log_file=None):
+def eaSimple(population, toolbox, cxpb, mutpb, ngen, env, stats=None, halloffame=None, verbose=True, log_file=None, experiment_name='dummy_demo_eaSimple'):
     logbook = tools.Logbook()
     logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
     # Evaluate initial population
-    eval_pop(population)
+    eval_pop(population, env)
 
     if halloffame is not None:
         halloffame.update(population)
@@ -115,12 +85,14 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None, halloffame=None
         print(logbook.stream)
 
     if log_file:
-        log(0, ngen, population, stats, log_file)
+        log(0, ngen, population, stats, log_file, experiment_name)
 
     # Evolve
     for gen in range(1, ngen + 1):
+        # print(f"\n=== Generation {gen} ===")
+        
         # Select the next generation individuals
-        offspring = selection(population)
+        offspring = selection(toolbox, population)
         offspring = list(map(toolbox.clone, offspring))
 
         # Crossover and mutation (DEAP varAnd)
@@ -128,7 +100,8 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None, halloffame=None
 
         # Find individuals with invalid fitness and evaluate
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        eval_pop(invalid_ind)
+        # print(f"{len(invalid_ind)} offspring need fitness eval")
+        eval_pop(invalid_ind, env)
 
         if halloffame is not None:
             halloffame.update(offspring)
@@ -142,13 +115,20 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, stats=None, halloffame=None
             print(logbook.stream)
 
         if log_file:
-            log(gen, ngen, population, stats, log_file)
+            log(gen, ngen, population, stats, log_file, experiment_name)
 
     return population, logbook
 
 
-def run_eaSimple(npop=100, ngen=30, cxpb=0.6, mutpb=0.2):
-    population = init_pop(npop)
+def run_eaSimple(env, npop=50, ngen=10, cxpb=0.6, mutpb=0.2, experiment_name='dummy_demo_eaSimple'):
+    if not os.path.exists(experiment_name):
+        os.makedirs(experiment_name)
+        
+    print(f"\nRUNNING EVOLUTION WITH eaSimple FOR ENEMY {env.enemies[0]}, EXPERIMENT {experiment_name}\n")
+        
+    toolbox = init_deap(env)
+        
+    population = init_pop(toolbox, npop)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("min", np.min)
@@ -161,8 +141,9 @@ def run_eaSimple(npop=100, ngen=30, cxpb=0.6, mutpb=0.2):
         log_file.write("\ngen best mean std\n")
         start = time.time()
 
-        population = eaSimple(population, toolbox, cxpb, mutpb, ngen,
-                                       stats=stats, halloffame=halloffame, log_file=log_file)
+        population = eaSimple(population, toolbox, cxpb, mutpb, ngen, env,
+                      stats=stats, halloffame=halloffame, log_file=log_file, experiment_name=experiment_name)
+
 
         end = time.time()  # End timer
         print(f"\nExecution time: {round((end - start) / 60, 2)} minutes \n")
