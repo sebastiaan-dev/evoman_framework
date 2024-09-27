@@ -69,7 +69,7 @@ def replacement(population, offspring):
     # print(f"Replacing population with new offspring....")
     population[:] = offspring
 
-def eaSimple(population, toolbox, cxpb, mutpb, ngen, env, stats=None, halloffame=None, verbose=True, log_file=None, experiment_name='dummy_demo_eaSimple'):
+def eaSimple(population, toolbox, cxpb, mutpb, ngen, env, stats=None, halloffame=None, verbose=False, log_file=None, experiment_name='dummy_demo_eaSimple'):
     logbook = tools.Logbook()
     logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 

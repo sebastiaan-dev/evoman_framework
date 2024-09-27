@@ -31,7 +31,7 @@ n_runs = 10
 enemies = [1, 2, 3]  
 
 # Set the EA function to run (CHANGE TO RUN EITHER EA SIMPLE OR MU+LAMBDA)
-# ea_function = run_muPlusLambda 
+#ea_function = run_muPlusLambda 
 ea_function = run_eaSimple 
 
 
@@ -82,9 +82,9 @@ for enemy in enemies:
 
             # TODO: Run EAs with optimized parameters
             if ea_function.__name__ == "run_eaSimple":
-                ea_function(env, npop=100, ngen=30, cxpb=0.6, mutpb=0.2, experiment_name=enemy_dir)
+                ea_function(env, npop=200, ngen=30, cxpb=0.616, mutpb=0.119, experiment_name=enemy_dir)
             elif ea_function.__name__ == "run_muPlusLambda":
-                ea_function(env, mu=100, ngen=30, lambda_=100, cxpb=0.6, mutpb=0.2, experiment_name=enemy_dir)
+                ea_function(env, mu=200, ngen=30, lambda_=100, cxpb=0.69, mutpb=0.11, experiment_name=enemy_dir)
     
 
             end_time = time.time()

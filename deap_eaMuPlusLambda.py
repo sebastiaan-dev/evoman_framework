@@ -25,8 +25,8 @@ def init_deap(env):
     try:
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMax)
-    except AttributeError:
-        pass
+    except TypeError: # To eliminate already exist warning
+        pass 
 
     n_hidden = 10
     n_weights = (env.get_num_sensors() + 1) * n_hidden + (n_hidden + 1) * 5
@@ -66,7 +66,7 @@ def replace_pop(toolbox, parents, offspring, mu):
     return selection(toolbox, parents, offspring, mu)
 
 # Main evolutionary loop
-def run_muPlusLambda(env, mu=100, ngen=30, lambda_=100, cxpb=0.6, mutpb=0.2, experiment_name='dummy_demo_muPlusLambda'):
+def run_muPlusLambda(env, mu=200, ngen=30, lambda_=100, cxpb=0.69, mutpb=0.1, experiment_name='dummy_demo_muPlusLambda'):
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
