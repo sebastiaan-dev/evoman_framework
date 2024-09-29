@@ -118,8 +118,9 @@ for enemy in enemies:
 
     fig, ax = plt.subplots()
     ax.boxplot(
-        [eaSimple_enemy_gains, eaLambda_enemy_gains], labels=["eaSimple", "eaLambda"]
+        [eaSimple_enemy_gains, eaLambda_enemy_gains],
+        labels=["eaSimple", "eaMuPlusLambda"],
     )
     ax.set_title(f"Enemy {enemy}")
     ax.set_ylabel("Mean gain")
-    plt.show()
+    plt.savefig(f"boxplot_gain_enemy_{enemy}.png", dpi=300)
