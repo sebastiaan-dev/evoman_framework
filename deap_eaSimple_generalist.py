@@ -28,8 +28,9 @@ def log(gen, ngen, population, stats, log_file, experiment_name):
 def evalOneMax(individual, env):
     individual_np = np.array(individual)
     total_fitness = 0
-    for enemy in env.enemies:  # Loop through each enemy in the environment
-        print(f"Evaluating enemy {enemy}...")  # Print current enemy being evaluated
+    list_of_enemies = env.enemies
+    for enemy in list_of_enemies:  
+        # print(f"Evaluating enemy {enemy}...")  # Print current enemy being evaluated
         env.update_parameter('enemies', [enemy])  # Set the current enemy in the environment
         f, p, e, t = env.play(pcont=individual_np)  # Play against the enemy
         total_fitness += f  # Accumulate fitness from each enemy
@@ -101,39 +102,39 @@ def run_eaSimple_generalist(env, npop=50, ngen=10, cxpb=0.6, mutpb=0.2, experime
         start = time.time()
 
 
-    # Evaluate initial population
-    eval_pop(population, toolbox, env)
-
-    if halloffame is not None:
-        halloffame.update(population)
-
-    if log_file:
-        log(0, ngen, population, stats, log_file, experiment_name)
-
-    # Evolve
-    for gen in range(1, ngen + 1):
-        
-        # Select the next generation individuals
-        offspring = selection(toolbox, population)
-        offspring = list(map(toolbox.clone, offspring))
-
-        # Crossover and mutation (DEAP varAnd)
-        offspring = algorithms.varAnd(offspring, toolbox, cxpb, mutpb)
-
-        # Find individuals with invalid fitness and evaluate
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        eval_pop(invalid_ind, toolbox, env)
+        # Evaluate initial population
+        eval_pop(population, toolbox, env)
 
         if halloffame is not None:
-            halloffame.update(offspring)
-
-        # Replace the old population with the new offspring
-        replacement(population, offspring)
+            halloffame.update(population)
 
         if log_file:
-            log(gen, ngen, population, stats, log_file, experiment_name)
+            log(0, ngen, population, stats, log_file, experiment_name)
 
-        end = time.time()  # End timer
-        print(f"\nExecution time: {round((end - start) / 60, 2)} minutes \n")
+        # Evolve
+        for gen in range(1, ngen + 1):
+            
+            # Select the next generation individuals
+            offspring = selection(toolbox, population)
+            offspring = list(map(toolbox.clone, offspring))
+
+            # Crossover and mutation (DEAP varAnd)
+            offspring = algorithms.varAnd(offspring, toolbox, cxpb, mutpb)
+
+            # Find individuals with invalid fitness and evaluate
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            eval_pop(invalid_ind, toolbox, env)
+
+            if halloffame is not None:
+                halloffame.update(offspring)
+
+            # Replace the old population with the new offspring
+            replacement(population, offspring)
+
+            if log_file:
+                log(gen, ngen, population, stats, log_file, experiment_name)
+
+            end = time.time()  # End timer
+            print(f"\nExecution time: {round((end - start) / 60, 2)} minutes \n")
 
     env.state_to_log()
