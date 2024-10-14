@@ -6,15 +6,15 @@ from deap import creator, base, tools, algorithms
 import numpy as np
 from demo_controller import player_controller
 # Log for visualization
-def log(gen, ngen, population, stats, log_file, experiment_name,gains):
+def log(gen, ngen, population, stats, log_file, experiment_name):
     record = stats.compile(population)
     best_ind = tools.selBest(population, 1)[0]
     best_fitness = best_ind.fitness.values[0]
 
     gen_mean = record['avg']
     gen_std = np.std([ind.fitness.values[0] for ind in population])
-    #log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
-    log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f} {gains[gen]:.6f}\n")
+    log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
+    
     if gen == 0 or gen == ngen:
         print(f"\n GENERATION {gen} - Best Ind: {best_ind[:5]}... - Experiment: {experiment_name}")
         np.savetxt(os.path.join(experiment_name, 'best.txt'), best_ind)
@@ -40,21 +40,16 @@ def init_deap(env):
     toolbox.register("select", tools.selTournament, tournsize=3)
     return toolbox
 
+# Fitness evaluation function
 def evalOneMax(individual, env):
     individual_np = np.array(individual)
     total_fitness = 0
-    total_gain = 0  # Track gain
-
-    for enemy in env.enemies:
+    for enemy in env.enemies:  # Loop through all enemies in the group
         env.update_parameter('enemies', [enemy])  # Temporarily set environment to this enemy
-        f, player_health, enemy_health, t = env.play(pcont=individual_np)
-        total_fitness += f
-        gain = player_health - enemy_health  # Calculate the gain
-        total_gain += gain  # Accumulate gain over enemies
-
-    avg_fitness = total_fitness / len(env.enemies)
-    avg_gain = total_gain / len(env.enemies)  # Average gain across enemies
-    return avg_fitness, avg_gain  # Return both fitness and gain
+        f, p, e, t = env.play(pcont=individual_np)
+        total_fitness += f  # Accumulate fitness from each enemy
+    avg_fitness = total_fitness / len(env.enemies)  # Average fitness across all enemies
+    return avg_fitness,
 
 
 # Step 1: Initialize population
@@ -76,7 +71,7 @@ def replace_pop(toolbox, parents, offspring, mu):
     return selection(toolbox, parents, offspring, mu)
 
 # Main evolutionary loop
-def run_muPlusLambda_generalist(env, mu=200, ngen=30, lambda_=100, cxpb=0.69, mutpb=0.1, experiment_name='dummy_demo_muPlusLambda_generalist'):
+def run_muPlusLambda_generalist(env, mu=200, ngen=30, lambda_=100, cxpb=0.69, mutpb=0.1, experiment_name='dummy_demo_muPlusLambda'):
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
