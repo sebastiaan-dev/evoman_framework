@@ -3,14 +3,10 @@ import sys
 import os
 import time
 import numpy as np
-import argparse
-from multiprocessing import Process, Manager, Lock
-from deap import tools
 from deap_eaMuPlusLambda_generalist import run_muPlusLambda_generalist
 from deap_eaSimple_generalist import run_eaSimple_generalist
 from evoman.environment import Environment
 from demo_controller import player_controller
-from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 
@@ -35,12 +31,12 @@ def create_directory_structure(experiment_name, enemy_num, run_num):
 n_hidden_neurons = 10
 n_runs = 10  # 10
 enemies = [1, 4]
-n_gen = 30
+n_gen = 40
 
 # Set the EA function to run (CHANGE TO RUN EITHER EA SIMPLE OR MU+LAMBDA)
 # ea_function = run_muPlusLambda
 ea_function = sys.argv[1]
-enemy_groups = [[1, 4]]  # [[1, 2, 3], [4, 5, 6], [1,4]]
+enemy_groups = [[1, 4]]  # [[1, 2, 3], [4, 5, 6], [1, 4]]
 
 function_dict = {
     "simple": run_eaSimple_generalist,
@@ -53,16 +49,16 @@ def execute_run(args):
     enemy_group, run_num, n_gen = args
 
     if ea_function == "simple":
-        experiment_name = "runs_eaSimple_generalist"
+        experiment_name = "runs_eaSimple_generalist_multi"
     elif ea_function == "muPlusLambda":
-        experiment_name = "run_muPlusLambda_generalist"
+        experiment_name = "run_muPlusLambda_generalist_multi"
 
     # create directory for saving the results (e.g. E1/run1)
     enemy_dir = create_directory_structure(experiment_name, enemy_group, run_num)
 
     # Initialize environment, save results in enemy-specific dir
     env = Environment(
-        multiplemode="no",
+        multiplemode="yes",
         experiment_name=enemy_dir,
         enemies=enemy_group,
         playermode="ai",
@@ -104,8 +100,8 @@ def execute_run(args):
                 env,
                 npop=200,
                 ngen=n_gen,
-                cxpb=0.616,
-                mutpb=0.119,
+                cxpb=0.9,
+                mutpb=0.15,
                 experiment_name=enemy_dir,
                 run_num=run_num,
             )
@@ -125,7 +121,7 @@ def execute_run(args):
         execution_time = round((end_time - start_time) / 60, 2)
 
 
-def run():
+def parallel_runs():
     # Initialize simulation in individual evolution mode, for each enemy separately.
     tasks = [
         (enemy_group, run_num, n_gen)
@@ -138,4 +134,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parallel_runs()

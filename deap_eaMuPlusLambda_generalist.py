@@ -1,3 +1,4 @@
+import math
 import sys, os
 import random
 import time
@@ -55,17 +56,26 @@ def init_deap(env):
 
 
 # Fitness evaluation function
+# def evalOneMax(individual, env):
+#     individual_np = np.array(individual)
+#     total_fitness = 0
+#     for enemy in env.enemies:  # Loop through all enemies in the group
+#         env.update_parameter(
+#             "enemies", [enemy]
+#         )  # Temporarily set environment to this enemy
+#         f, p, e, t = env.play(pcont=individual_np)
+#         total_fitness += f  # Accumulate fitness from each enemy
+#     avg_fitness = total_fitness / len(env.enemies)  # Average fitness across all enemies
+#     return (avg_fitness,)
+
+
 def evalOneMax(individual, env):
     individual_np = np.array(individual)
-    total_fitness = 0
-    for enemy in env.enemies:  # Loop through all enemies in the group
-        env.update_parameter(
-            "enemies", [enemy]
-        )  # Temporarily set environment to this enemy
-        f, p, e, t = env.play(pcont=individual_np)
-        total_fitness += f  # Accumulate fitness from each enemy
-    avg_fitness = total_fitness / len(env.enemies)  # Average fitness across all enemies
-    return (avg_fitness,)
+    f, p, e, t = env.play(pcont=individual_np)
+
+    fitness = 0.9 * (100 - e) - math.pow(math.e, (100 - p) / 20) - np.log(t)
+
+    return (fitness,)
 
 
 # Step 1: Initialize population
@@ -171,6 +181,8 @@ def run_muPlusLambda_generalist(
                         cxpb,
                         mutpb,
                     )
+
+                    progress.update(1)
         else:
             for gen in range(1, ngen + 1):
                 run_generation(
