@@ -78,7 +78,7 @@ def replace_pop(toolbox, parents, offspring, npop):
 # Main evolutionary loop
 def run_muPlusLambda_generalist(
     env,
-    report,
+    train,
     npop,
     ngen,
     lambda_,
@@ -127,7 +127,7 @@ def run_muPlusLambda_generalist(
             best_ind = tools.selBest(population, 1)[0]
             found_max_fitness = best_ind.fitness.values[0]
 
-            report({"fitness": found_max_fitness})
+            train.report({"fitness": found_max_fitness})
 
         end = time.time()  # End timer
         # print(f"\nExecution time: {round((end - start) / 60, 2)} minutes \n")

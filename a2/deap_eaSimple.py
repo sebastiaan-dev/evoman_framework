@@ -86,7 +86,7 @@ def replacement(population, offspring):
 
 def run_eaSimple_generalist(
     env,
-    report,
+    train,
     npop,
     ngen,
     cxpb,
@@ -146,7 +146,7 @@ def run_eaSimple_generalist(
             best_ind = tools.selBest(population, 1)[0]
             found_max_fitness = best_ind.fitness.values[0]
 
-            report({"fitness": found_max_fitness})
+            train.report({"fitness": found_max_fitness})
 
         end = time.time()  # End timer
 

@@ -1,3 +1,4 @@
+from math import factorial
 import os
 from a2.deap_eaMuPlusLambda import run_muPlusLambda_generalist
 from a2.deap_eaSimple import run_eaSimple_generalist
@@ -17,21 +18,23 @@ def simulate_ea_nsga3(args):
     Setup the simulation environment and run the NSGA3 algorithm.
     """
     (
-        report,
+        train,
         experiment_name,
         enemy_group,
         n_hidden_neurons,
-        npop,
         ngen,
         cxpb,
         mutpb,
+        P,
+        mate_eta,
+        mutate_eta,
     ) = args
 
     enemy_dir = create_directory_structure(experiment_name, enemy_group)
 
     env = Environment(
         randomini="yes",
-        multiplemode="yes",
+        multiplemode="no",
         experiment_name=enemy_dir,
         enemies=enemy_group,
         playermode="ai",
@@ -47,11 +50,13 @@ def simulate_ea_nsga3(args):
 
     return run_nsga3_generalist(
         env,
-        report,
-        npop,
+        train,
         ngen,
         cxpb,
         mutpb,
+        P,
+        mate_eta,
+        mutate_eta,
         experiment_name,
     )
 
@@ -61,7 +66,7 @@ def simulate_ea_simple(args):
     Setup the simulation environment and run the EA Simple algorithm.
     """
     (
-        report,
+        train,
         experiment_name,
         enemy_group,
         n_hidden_neurons,
@@ -91,7 +96,7 @@ def simulate_ea_simple(args):
 
     return run_eaSimple_generalist(
         env,
-        report,
+        train,
         npop,
         ngen,
         cxpb,
@@ -105,7 +110,7 @@ def simulate_ea_mupluslambda(args):
     Setup the simulation environment and run the EA Mu Plus Lambda algorithm.
     """
     (
-        report,
+        train,
         experiment_name,
         enemy_group,
         n_hidden_neurons,
@@ -136,7 +141,7 @@ def simulate_ea_mupluslambda(args):
 
     return run_muPlusLambda_generalist(
         env,
-        report,
+        train,
         npop,
         ngen,
         lambda_,
@@ -148,15 +153,22 @@ def simulate_ea_mupluslambda(args):
 
 # Call this file to test a simulation manually.
 if __name__ == "__main__":
+    NOBJ = 3
+    P = 30
+    H = factorial(NOBJ + P - 1) / (factorial(P) * factorial(NOBJ - 1))
+    npop = int(H + (4 - H % 4))
+
     simulate_ea_nsga3(
         (
             lambda x: None,
             "test34",
             [1, 4],
             10,
-            200,
-            40,
-            0.8,
-            0.15,
+            500,
+            0.9,
+            0.1,
+            30,
+            30,
+            20,
         )
     )

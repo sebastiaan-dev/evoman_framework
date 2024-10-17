@@ -9,9 +9,7 @@ def create_directory_structure(experiment_name, enemy_num, run_num=1):
     Creates a directory structure for saving results based on the enemy and run number.
     Example: optimization_test_eaSimple_generalist/E1/run1/ etc.
     """
-    enemy_dir = (
-        f"a2/{experiment_name}/E{' '.join(str(e) for e in enemy_num)}/run{run_num}"
-    )
+    enemy_dir = f"{experiment_name}/E{' '.join(str(e) for e in enemy_num)}"
     if not os.path.exists(enemy_dir):
         os.makedirs(enemy_dir)
     return enemy_dir
