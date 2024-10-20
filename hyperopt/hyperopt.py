@@ -8,7 +8,9 @@ from ray.tune.search import ConcurrencyLimiter
 
 
 class HyperOpt(ABC):
-    def __init__(self, metric, mode, name, search_space, algo, num_samples):
+    def __init__(
+        self, metric, mode, name, search_space, algo, num_samples, stopping_value
+    ):
         scheduler = ASHAScheduler(
             # Metric to optimize
             metric=metric,
@@ -39,7 +41,7 @@ class HyperOpt(ABC):
         run_config = train.RunConfig(
             storage_path=f"{os.getcwd()}/ray_results",
             name=name,
-            stop={metric: 1},
+            stop={metric: stopping_value},
         )
 
         self.tuner = tune.Tuner(

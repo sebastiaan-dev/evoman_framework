@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import random
 import multiprocessing as mp
@@ -69,6 +70,8 @@ class MuPlusLambda(EAAlgorithm):
         mutation_adjuster=None,
         train=None,
         name="tmp",
+        should_checkpoint=True,
+        run=None,
     ):
         super().__init__(
             base.Toolbox(),
@@ -78,6 +81,7 @@ class MuPlusLambda(EAAlgorithm):
             difficulty_adjuster,
             mutation_adjuster,
             name,
+            should_checkpoint,
         )
 
         self.train = train
@@ -87,6 +91,7 @@ class MuPlusLambda(EAAlgorithm):
         self.cxpb = cxpb
         self.mutpb = mutpb
         self.lambda_ = lambda_
+        self.run = run
 
         self.setup_deap()
         self._setup_mp()
@@ -162,19 +167,45 @@ class MuPlusLambda(EAAlgorithm):
         )
 
     def next_population(self, population, offspring):
-        return self.toolbox.select(population + offspring, self.npop)
+        combined_population = population + offspring
+        return self.toolbox.select(combined_population, self.npop)
 
     def cleanup(self):
         super().cleanup()
         self.stop_signal.set()
 
-    def report(self, fitness, ind):
-        if self.train is not None:
-            value, _ = fitness
+    def report(self, gen, fitness, ind):
+        print(f"Generation {gen}: {fitness}")
 
+        if self.train is not None:
             self.train.report(
                 {
-                    "fitness": value,
+                    "fitness": fitness[0],
                     "individual": ind,
                 }
             )
+
+    def log(self, gen, population):
+        if not self.run:
+            return
+        # Check if the folder exists, if not create it
+        path = f"results/{self.name}/{'_'.join(map(str, self.enemies))}/run{self.run}"
+
+        # If the file does not exist, create it and write the header
+        if not os.path.exists(path):
+            os.makedirs(path)
+            log_file = open(f"{path}/result.txt", "a")
+            log_file.write("\ngen best mean std\n")
+            log_file.close()
+            return
+
+        record = self.stats.compile(population)
+        best_ind = tools.selBest(population, 1)[0]
+        best_fitness = best_ind.fitness.values[0]
+
+        gen_mean = record["avg"]
+        gen_std = np.std([ind.fitness.values[0] for ind in population])
+
+        log_file = open(f"{path}/result.txt", "a")
+        log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
+        log_file.close()

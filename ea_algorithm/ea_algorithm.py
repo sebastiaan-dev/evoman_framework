@@ -21,14 +21,16 @@ class EAAlgorithm(ABC):
         difficultyadjuster,
         mutationadjuster,
         name,
+        should_checkpoint=True,
     ):
-        self.difficultyadjuster: DifficultyAdjuster = difficultyadjuster
+        self.difficultyadjuster = difficultyadjuster
         self.mutationadjuster = mutationadjuster
         self.toolbox = toolbox
         self.stats = stats
         self.enemies = enemies
         self.n_hidden = n_hidden
         self.name = name
+        self.should_checkpoint = should_checkpoint
 
         self._setup_env()
         self.timeexpire = self.env.timeexpire
@@ -69,7 +71,10 @@ class EAAlgorithm(ABC):
     def next_population(self, population, offspring):
         pass
 
-    def report(self, best):
+    def report(self, gen, fitness, best_ind):
+        pass
+
+    def log(self, gen, population):
         pass
 
     def eval_pop(self, individuals):
@@ -109,6 +114,9 @@ class EAAlgorithm(ABC):
             self.halloffame.update(population)
 
     def checkpoint(self, gen, population):
+        if not self.should_checkpoint:
+            return
+
         # Save best individual to disk in folder self.name
         best_ind = tools.selBest(population, 1)[0]
         # Check if the folder exists, if not create it
@@ -124,6 +132,8 @@ class EAAlgorithm(ABC):
         self.eval_pop(population)
         self.update_halloffame(population)
         best_ind = None
+
+        self.log(0, population)
 
         # Evolve
         for gen in range(1, self.ngen + 1):
@@ -141,10 +151,12 @@ class EAAlgorithm(ABC):
             population = self.next_population(population, offspring)
 
             best_ind = best_ind = tools.selBest(population, 1)[0]
-            self.report(best_ind.fitness.values, best_ind)
+            self.report(gen, best_ind.fitness.values, best_ind)
 
             if gen % 10 == 0:
                 self.checkpoint(gen, population)
+
+            self.log(gen, population)
 
         self.checkpoint(gen, population)
         self.cleanup()
