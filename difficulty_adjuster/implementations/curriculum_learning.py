@@ -48,7 +48,12 @@ class CurriculumLearning(DifficultyAdjuster):
                 self.unknown_enemies.remove(new_enemies[0])
             # If there are no uknown enemies, select known enemies at random
             else:
-                new_enemies = random.sample(self.known_enemies, random.randint(2, 3))
+                if generation < 200:
+                    new_enemies = random.sample(
+                        self.known_enemies, random.randint(2, 3)
+                    )
+                else:
+                    new_enemies = self.known_enemies
 
             self.stagnation_counter = 0
 
