@@ -4,11 +4,11 @@ from utils.math import normalize
 
 
 class CurriculumLearning(DifficultyAdjuster):
-    def __init__(self, enemies):
+    def __init__(self, known_enemies, unkown_enemies):
         super().__init__()
 
-        self.known_enemies = enemies
-        self.unknown_enemies = [i for i in range(1, 9) if i not in enemies]
+        self.known_enemies = known_enemies
+        self.unknown_enemies = unkown_enemies
         self.stagnation_threshold = 30
         self.stagnation_counter = 0
         self.previous_metric = None
@@ -46,16 +46,9 @@ class CurriculumLearning(DifficultyAdjuster):
                 # Move the unknown enemy to known enemies
                 self.known_enemies.append(new_enemies[0])
                 self.unknown_enemies.remove(new_enemies[0])
-            # If there are no uknown enemies, select between 3 - 6 known enemies at random
+            # If there are no uknown enemies, select known enemies at random
             else:
-                if generation > 800:
-                    new_enemies = random.sample(
-                        self.known_enemies, random.randint(4, 7)
-                    )
-                else:
-                    new_enemies = random.sample(
-                        self.known_enemies, random.randint(3, 6)
-                    )
+                new_enemies = random.sample(self.known_enemies, random.randint(2, 3))
 
             self.stagnation_counter = 0
 

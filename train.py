@@ -11,7 +11,12 @@ from mutation_adjuster.implementations.aggressive import AggressiveAdjuster
 
 def train_nsga3(run, enemies):
     aggressive = AggressiveAdjuster(cxpb=0.8931363224983215, mutpb=0.24)
-    currlearning = CurriculumLearning(enemies)
+
+    # Split the first 3 enemies into known and unknown enemies
+    known_enemies = enemies[:1]
+    unknown_enemies = enemies[1:]
+
+    currlearning = CurriculumLearning(known_enemies, unknown_enemies)
     nsga3 = NSGA3(
         ngen=2000,
         enemies=enemies,
