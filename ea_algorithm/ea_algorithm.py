@@ -8,7 +8,6 @@ import numpy as np
 from demo_controller import player_controller
 from difficulty_adjuster.difficulty_adjuster import DifficultyAdjuster
 from evoman.environment import Environment
-from utils.math import normalize
 
 
 class EAAlgorithm(ABC):
@@ -74,8 +73,39 @@ class EAAlgorithm(ABC):
     def report(self, gen, fitness, best_ind):
         pass
 
+    def get_fitness(self, individual):
+        return None
+
     def log(self, gen, population):
-        pass
+        if self.run is None:
+            return
+        if self.get_fitness(population[0]) is None:
+            print("get_best_fitness is not implemented!")
+            return
+
+        # Check if the folder exists, if not create it
+        path = f"results/{self.name}/{'_'.join(map(str, self.enemies))}/run{self.run}"
+
+        # If the file does not exist, create it and write the header
+        if not os.path.exists(path):
+            os.makedirs(path)
+            log_file = open(f"{path}/result.txt", "a")
+            log_file.write("\ngen best mean std\n")
+            log_file.close()
+            return
+
+        record = self.stats.compile(population)
+        best_ind = tools.selBest(population, 1)[0]
+        best_fitness = self.get_fitness(best_ind)
+
+        gen_mean = record["avg"]
+        gen_std = np.std([self.get_fitness(ind) for ind in population])
+
+        log_file = open(f"{path}/result.txt", "a")
+        log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
+        log_file.close()
+
+        np.savetxt(f"{path}/best.txt", best_ind)
 
     def eval_pop(self, individuals):
         """Evaluate the fitness of a list of individuals."""

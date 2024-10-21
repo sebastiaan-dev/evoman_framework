@@ -10,52 +10,44 @@ from mutation_adjuster.implementations.aggressive import AggressiveAdjuster
 
 
 def train_nsga3(run, enemies):
-    aggressive = AggressiveAdjuster(cxpb=0.8931363224983215, mutpb=0.24)
+    aggressive = AggressiveAdjuster(cxpb=0.7, mutpb=0.4)
 
     # Split the first 3 enemies into known and unknown enemies
     known_enemies = enemies[:1]
     unknown_enemies = enemies[1:]
 
+    enemy_dir = "_".join(map(str, enemies))
+
     currlearning = CurriculumLearning(known_enemies, unknown_enemies)
     nsga3 = NSGA3(
-        ngen=2000,
-        enemies=enemies,
+        ngen=300,
+        enemies=known_enemies,
         n_hidden=10,
-        P=16,
-        cxpb=0.8931363224983215,
-        mutpb=0.24,
-        mate_eta=5,
-        mutate_eta=10,
+        P=30,
+        cxpb=0.9,
+        mutpb=0.01,
+        mate_eta=20,
+        mutate_eta=30,
         difficulty_adjuster=currlearning,
-        mutation_adjuster=aggressive,
-        name=f"nsga3-{'_'.join(map(str, enemies))}",
+        name=f"nsga3/{enemy_dir}",
         run=run,
     )
 
     return nsga3.evolve()
 
 
-# {
-#   "cxpb_mutpb": [
-#     0.8006317675051396,
-#     0.05716553541228208
-#   ],
-#   "lambda_": 227,
-#   "ngen": 48,
-#   "npop": 273
-# }
-
-
 def train_mupluslambda(run, enemies):
+    enemy_dir = "_".join(map(str, enemies))
+
     muplus = MuPlusLambda(
-        ngen=100,
+        ngen=50,
         npop=273,
         enemies=enemies,
         n_hidden=10,
         cxpb=0.8006317675051396,
         mutpb=0.05716553541228208,
         lambda_=227,
-        name=f"mupluslambda-{'_'.join(map(str, enemies))}",
+        name=f"mupluslambda/{enemy_dir}",
         run=run,
     )
 
@@ -84,5 +76,5 @@ if __name__ == "__main__":
     enemy_groups = [[1, 2, 3], [4, 7, 8]]
 
     for enemies in enemy_groups:
-        for run in range(runs):
+        for run in range(1, runs + 1):
             train_mupluslambda(run, enemies)

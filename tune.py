@@ -26,9 +26,9 @@ def tune_nsga3(config):
 
 def optimize_nsga3():
     search_space = {
-        "cxpb": tune.uniform(0.5, 1.0),
-        "mutpb": tune.uniform(0.0, 0.6),
-        "p": tune.randint(6, 30),
+        "cxpb": tune.uniform(0.6, 0.9),
+        "mutpb": tune.uniform(0.0, 0.5),
+        "p": tune.randint(6, 35),
         "mate_eta": tune.randint(1, 30),
         "mutate_eta": tune.randint(1, 30),
     }
@@ -39,11 +39,11 @@ def optimize_nsga3():
         mode="max",
         search_space=search_space,
         algo=tune_nsga3,
-        num_samples=50,
+        num_samples=500,
         stopping_value=1.0,
     )
 
-    tuner.fit()
+    best = tuner.fit()
 
 
 def tune_mupluslambda(config):

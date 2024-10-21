@@ -169,6 +169,9 @@ class Simple(EAAlgorithm):
         population[:] = offspring
         return population
 
+    def get_fitness(self, individual):
+        return individual.fitness.values[0]
+
     def cleanup(self):
         super().cleanup()
         self.stop_signal.set()
@@ -183,28 +186,3 @@ class Simple(EAAlgorithm):
                     "individual": ind,
                 }
             )
-
-    def log(self, gen, population):
-        if not self.run:
-            return
-        # Check if the folder exists, if not create it
-        path = f"results/{self.name}/{'_'.join(map(str, self.enemies))}/run{self.run}"
-
-        # If the file does not exist, create it and write the header
-        if not os.path.exists(path):
-            os.makedirs(path)
-            log_file = open(f"{path}/result.txt", "a")
-            log_file.write("\ngen best mean std\n")
-            log_file.close()
-            return
-
-        record = self.stats.compile(population)
-        best_ind = tools.selBest(population, 1)[0]
-        best_fitness = best_ind.fitness.values[0]
-
-        gen_mean = record["avg"]
-        gen_std = np.std([ind.fitness.values[0] for ind in population])
-
-        log_file = open(f"{path}/result.txt", "a")
-        log_file.write(f"\n{gen} {best_fitness:.6f} {gen_mean:.6f} {gen_std:.6f}\n")
-        log_file.close()

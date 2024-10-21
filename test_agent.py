@@ -14,7 +14,7 @@ n_hidden = 10
 
 env = Environment(
     experiment_name="test",
-    enemies=[1],
+    enemies=[3],
     playermode="ai",
     fullscreen=fullscreen,
     player_controller=player_controller(n_hidden),
@@ -26,7 +26,7 @@ env = Environment(
 )
 
 # path = "runs_eaSimple/E1/run1/best.txt"
-path = "runs_muPlusLambda/E1/run1/best.txt"
+path = "test/best.txt"
 
 f, p, e, t = env.play(pcont=np.loadtxt(path))
 
